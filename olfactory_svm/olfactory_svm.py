@@ -45,6 +45,12 @@ plt.plot(target)
 
 # make a new support vector machine classifier
 clf = svm.SVC()
-clf.fit(activation[:-1], target[:-1])
+clf.fit(activation, target)
 
-print(clf.predict(activation[345]))
+correctPredictions = 0
+for i in range(concentration.shape[0]):
+    if(clf.predict(activation[i]) == target[i]):
+        correctPredictions += 1.0
+
+print(correctPredictions / target.shape[0])
+#print(clf.predict(activation[345]))
