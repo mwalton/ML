@@ -21,18 +21,7 @@ reader = csv.reader(open("data/sensorActivation.csv","rb"), delimiter=",")
 x = list(reader)
 activation = np.array(x).astype('float')
 
-#plot data
-activation = np.transpose(activation)
-
-figure(1)
-plt.plot(concentration)
-
-figure(2)
-plt.imshow(activation)
-
 #get max(concentration) foreach t (target is max odorant index)
-
-
 target = np.zeros([concentration.shape[0]], dtype=float)
 
 for i in range(concentration.shape[0]):
@@ -41,8 +30,21 @@ for i in range(concentration.shape[0]):
         if (concentration[i][j] > maxC):
             maxC = concentration[i][j]
             target[i] = j
-print(target)
+
+#plot imported data and target
+#activation = np.transpose(activation)
+
+figure(1)
+plt.plot(concentration)
+
+figure(2)
+plt.imshow(np.transpose(activation))
+
+figure(3)
+plt.plot(target)
 
 # make a new support vector machine classifier
 clf = svm.SVC()
-#clf.fit(activation, concentration)
+clf.fit(activation[:-1], target[:-1])
+
+print(clf.predict(activation[345]))
