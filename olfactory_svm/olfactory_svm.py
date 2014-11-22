@@ -12,19 +12,19 @@ from pylab import *
 from sklearn import svm
 
 #load data
-reader = csv.reader(open("data/train_c.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/4_analyte/train_c.csv","rb"), delimiter=",")
 x = list(reader)
 train_c = np.array(x).astype('float')
 
-reader = csv.reader(open("data/train_a.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/4_analyte/train_a.csv","rb"), delimiter=",")
 x = list(reader)
 train_a = np.array(x).astype('float')
 
-reader = csv.reader(open("data/test_c.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/4_analyte/test_c.csv","rb"), delimiter=",")
 x = list(reader)
 test_c = np.array(x).astype('float')
 
-reader = csv.reader(open("data/test_a.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/4_analyte/test_a.csv","rb"), delimiter=",")
 x = list(reader)
 test_a = np.array(x).astype('float')
 
