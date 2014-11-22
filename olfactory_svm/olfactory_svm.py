@@ -48,8 +48,6 @@ for i in range(test_c.shape[0]):
             test_target[i] = j
 
 #plot imported data and target
-#activation = np.transpose(activation)
-
 figure(1)
 plt.plot(train_c)
 
@@ -58,6 +56,15 @@ plt.imshow(np.transpose(train_a))
 
 figure(3)
 plt.plot(train_target)
+
+figure(4)
+plt.plot(test_c)
+
+figure(5)
+plt.imshow(np.transpose(test_a))
+
+figure(6)
+plt.plot(test_target)
 
 # train svm classifier
 clf = svm.SVC()
