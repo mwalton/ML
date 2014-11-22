@@ -12,45 +12,62 @@ from pylab import *
 from sklearn import svm
 
 #load data
-
-reader = csv.reader(open("data/concentration.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/train_c.csv","rb"), delimiter=",")
 x = list(reader)
-concentration = np.array(x).astype('float')
+train_c = np.array(x).astype('float')
 
-reader = csv.reader(open("data/sensorActivation.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/train_a.csv","rb"), delimiter=",")
 x = list(reader)
-activation = np.array(x).astype('float')
+train_a = np.array(x).astype('float')
+
+reader = csv.reader(open("data/test_c.csv","rb"), delimiter=",")
+x = list(reader)
+test_c = np.array(x).astype('float')
+
+reader = csv.reader(open("data/test_a.csv","rb"), delimiter=",")
+x = list(reader)
+test_a = np.array(x).astype('float')
 
 #get max(concentration) foreach t (target is max odorant index)
-target = np.zeros([concentration.shape[0]], dtype=float)
+train_target = np.zeros([train_c.shape[0]], dtype=float)
 
-for i in range(concentration.shape[0]):
+for i in range(train_c.shape[0]):
     maxC = 0
-    for j in range(concentration.shape[1]):
-        if (concentration[i][j] > maxC):
-            maxC = concentration[i][j]
-            target[i] = j
+    for j in range(train_c.shape[1]):
+        if (train_c[i][j] > maxC):
+            maxC = train_c[i][j]
+            train_target[i] = j
+            
+test_target = np.zeros([test_c.shape[0]], dtype=float)
+
+for i in range(test_c.shape[0]):
+    maxC = 0
+    for j in range(test_c.shape[1]):
+        if (test_c[i][j] > maxC):
+            maxC = test_c[i][j]
+            test_target[i] = j
 
 #plot imported data and target
 #activation = np.transpose(activation)
 
 figure(1)
-plt.plot(concentration)
+plt.plot(train_c)
 
 figure(2)
-plt.imshow(np.transpose(activation))
+plt.imshow(np.transpose(train_a))
 
 figure(3)
-plt.plot(target)
+plt.plot(train_target)
 
-# make a new support vector machine classifier
+# train svm classifier
 clf = svm.SVC()
-clf.fit(activation, target)
+clf.fit(train_a, train_target)
+
+# test classification
 
 correctPredictions = 0
-for i in range(concentration.shape[0]):
-    if(clf.predict(activation[i]) == target[i]):
+for i in range(test_c.shape[0]):
+    if(clf.predict(test_a[i]) == test_target[i]):
         correctPredictions += 1.0
 
-print(correctPredictions / target.shape[0])
-#print(clf.predict(activation[345]))
+print(correctPredictions / test_target.shape[0])
