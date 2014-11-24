@@ -11,7 +11,7 @@ sensor (pattern): train_a.csv
 concentration (target/classification): train_c.csv
 
 Testing:
-All 4 analytes advect in the environment simultaneously with background
+All 4 analytes advect in the environment simultaneously without background
 
 sensor (pattern): test_a.csv
 concentration (target/classification): test_c.csv
