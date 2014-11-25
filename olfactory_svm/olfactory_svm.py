@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
 from sklearn.metrics import confusion_matrix
+from pylab import figure
 
 #load data
 reader = csv.reader(open("data/OBGtrain_4OBGtest/train_c.csv","rb"), delimiter=",")
