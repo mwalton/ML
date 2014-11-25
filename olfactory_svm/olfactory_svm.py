@@ -8,16 +8,21 @@ Created on Fri Nov 21 16:41:42 2014
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import pylab as pl
+
 from sklearn import svm
+from sklearn.preprocessing import StandardScaler
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import confusion_matrix
-from pylab import figure
+
+expType = 1
+tuneHyperparams = False
 
 ###############################################################################
 # Pick a dataset
 # As the project grows, this should be replaced by a line arg.
 # to set a containing folder then run on the data in that dir
-expType = 1
-
 if (expType == 0):
     train_conc_file = "data/Otrain_4Otest/train_c.csv"
     train_actv_file = "data/Otrain_4Otest/train_a.csv"
@@ -74,8 +79,27 @@ for i in range(test_c.shape[0]):
             test_target[i] = j - 1
 
 ###############################################################################
+# Data Pre-processing
+# scaling should help performance, but it hinders drastically
+# need to look into this further
+scaler = StandardScaler()
+X = scaler.fit_transform(train_a)
+
+###############################################################################
 # Train and test the SVM
 # train svm classifier
+
+if (tuneHyperparams):
+    C_range = 10.0 ** np.arange(-2, 9)
+    gamma_range = 10.0 ** np.arange(-5, 4)
+    param_grid = dict(gamma=gamma_range, C=C_range)
+    cv = StratifiedKFold(y=train_target, n_folds=3)
+    grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
+    grid.fit(train_a, train_target)
+    print("Best Classifier: ", grid.best_estimator_)
+    bestClf = grid.best_estimator_
+    bestPred = bestClf.predict(test_a)
+
 clf = svm.SVC()
 clf.fit(train_a, train_target)
 
@@ -84,52 +108,56 @@ pred = clf.predict(test_a)
 
 # test classification
 correctPredictions = 0
+bestClfCorrect = 0
 for i in range(pred.shape[0]):
     if(pred[i] == test_target[i]):
         correctPredictions += 1.0
+    if (tuneHyperparams and bestPred[i] == test_target[i]):
+        bestClf += 1.0
 
-print(correctPredictions / test_target.shape[0])
+print("Default H-params", correctPredictions / test_target.shape[0])
+print("Optomized H-params", bestClfCorrect / test_target.shape[0])
 
 ###############################################################################
 #PLOT DATA
 
 #plot imported data and target
-figure(1)
+pl.figure(1)
 plt.plot(train_c)
 plt.title('Training (Odorant Concentration)')
 plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
-figure(2)
+pl.figure(2)
 plt.plot(train_target)
 plt.title('Training (Target Odorant)')
 plt.ylabel('Odorant Index')
 plt.xlabel('Time')
 plt.show()
 
-figure(3)
+pl.figure(3)
 plt.imshow(np.transpose(train_a))
 plt.title('Training (Sensor Pattern)')
 plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
 
-figure(4)
+pl.figure(4)
 plt.plot(test_c)
 plt.title('Testing (Odorant Concentration)')
 plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
-figure(5)
+pl.figure(5)
 plt.plot(test_target)
 plt.title('Testing (Target Odorant)')
 plt.ylabel('Odorant Index')
 plt.xlabel('Time')
 plt.show()
 
-figure(6)
+pl.figure(6)
 plt.imshow(np.transpose(test_a))
 plt.title('Testing (Sensor Pattern)')
 plt.ylabel('Activation')
@@ -138,9 +166,18 @@ plt.show()
 
 #show confusion matrix
 cm = confusion_matrix(test_target, pred)
-figure(7)
+pl.figure(7)
 plt.matshow(cm)
 plt.colorbar()
 plt.ylabel('Target label')
 plt.xlabel('Predicted label')
 plt.show()
+
+if (tuneHyperparams):
+    cm = confusion_matrix(test_target, bestPred)
+    pl.figure(7)
+    plt.matshow(cm)
+    plt.colorbar()
+    plt.ylabel('Target label')
+    plt.xlabel('Predicted label')
+    plt.show()
