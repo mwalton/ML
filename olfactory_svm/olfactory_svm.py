@@ -17,7 +17,8 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import confusion_matrix
 
 expType = 1
-tuneHyperparams = False
+preprocess = True
+tuneHyperparams = True
 
 ###############################################################################
 # Pick a dataset
@@ -80,10 +81,10 @@ for i in range(test_c.shape[0]):
 
 ###############################################################################
 # Data Pre-processing
-# scaling should help performance, but it hinders drastically
-# need to look into this further
-scaler = StandardScaler()
-X = scaler.fit_transform(train_a)
+# Improves classification on 
+if (preprocess):
+    scaler = StandardScaler()
+    train_a = scaler.fit_transform(train_a, train_target)
 
 ###############################################################################
 # Train and test the SVM
@@ -99,6 +100,14 @@ if (tuneHyperparams):
     print("Best Classifier: ", grid.best_estimator_)
     bestClf = grid.best_estimator_
     bestPred = bestClf.predict(test_a)
+    
+    score_dict = grid.grid_scores_
+    scores = [z[1] for z in score_dict]
+    scores = np.array(scores).reshape(len(C_range), len(gamma_range))
+    pl.figure(10)
+    pl.imshow(scores, interpolation='nearest', cmap=pl.cm.spectral)
+    pl.colorbar()    
+    pl.show()
 
 clf = svm.SVC()
 clf.fit(train_a, train_target)
@@ -113,10 +122,14 @@ for i in range(pred.shape[0]):
     if(pred[i] == test_target[i]):
         correctPredictions += 1.0
     if (tuneHyperparams and bestPred[i] == test_target[i]):
-        bestClf += 1.0
+        bestClfCorrect += 1.0
 
-print("Default H-params", correctPredictions / test_target.shape[0])
-print("Optomized H-params", bestClfCorrect / test_target.shape[0])
+defaultClfPerformance = correctPredictions / test_target.shape[0]
+optoClfPerformance = bestClfCorrect / test_target.shape[0]
+
+print("Default H-params", defaultClfPerformance)
+print("Optomized H-params", optoClfPerformance)
+print("Difference", optoClfPerformance - defaultClfPerformance)
 
 ###############################################################################
 #PLOT DATA
@@ -136,8 +149,9 @@ plt.ylabel('Odorant Index')
 plt.xlabel('Time')
 plt.show()
 
-pl.figure(3)
-plt.imshow(np.transpose(train_a))
+pl.figure(3, figsize=(6,6))
+plt.imshow(np.transpose(train_a)[:, 25:150])
+#plt.colorbar()
 plt.title('Training (Sensor Pattern)')
 plt.ylabel('Activation')
 plt.xlabel('Time')
@@ -159,6 +173,7 @@ plt.show()
 
 pl.figure(6)
 plt.imshow(np.transpose(test_a))
+#plt.colorbar()
 plt.title('Testing (Sensor Pattern)')
 plt.ylabel('Activation')
 plt.xlabel('Time')
@@ -175,7 +190,7 @@ plt.show()
 
 if (tuneHyperparams):
     cm = confusion_matrix(test_target, bestPred)
-    pl.figure(7)
+    pl.figure(8)
     plt.matshow(cm)
     plt.colorbar()
     plt.ylabel('Target label')
