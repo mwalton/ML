@@ -8,8 +8,8 @@ Created on Fri Nov 21 16:41:42 2014
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-from pylab import *
 from sklearn import svm
+from sklearn.metrics import confusion_matrix
 
 #load data
 reader = csv.reader(open("data/Otrain_4OBGtest/train_c.csv","rb"), delimiter=",")
@@ -47,34 +47,58 @@ for i in range(test_c.shape[0]):
             maxC = test_c[i][j]
             test_target[i] = j
 
-#plot imported data and target
-figure(1)
-plt.plot(train_c)
-
-figure(2)
-plt.imshow(np.transpose(train_a))
-
-figure(3)
-plt.plot(train_target)
-
-figure(4)
-plt.plot(test_c)
-
-figure(5)
-plt.imshow(np.transpose(test_a))
-
-figure(6)
-plt.plot(test_target)
-
 # train svm classifier
 clf = svm.SVC()
 clf.fit(train_a, train_target)
 
-# test classification
+# run the prediction
+pred = clf.predict(test_a)
 
+# test classification
 correctPredictions = 0
-for i in range(test_c.shape[0]):
-    if(clf.predict(test_a[i]) == test_target[i]):
+for i in range(pred.shape[0]):
+    if(pred[i] == test_target[i]):
         correctPredictions += 1.0
 
 print(correctPredictions / test_target.shape[0])
+
+####################################################
+#PLOT DATA
+
+#plot imported data and target
+figure(1)
+plt.plot(train_c)
+plt.title('Training (Odorant Concentration)')
+plt.ylabel('Concentration')
+plt.xlabel('Time')
+plt.show()
+
+figure(2)
+plt.imshow(np.transpose(train_a))
+plt.title('Training (Sensor Pattern)')
+plt.ylabel('Activation')
+plt.xlabel('Time')
+plt.show()
+
+figure(3)
+plt.plot(test_c)
+plt.title('Testing (Odorant Concentration)')
+plt.ylabel('Concentration')
+plt.xlabel('Time')
+plt.show()
+
+figure(5)
+plt.imshow(np.transpose(test_a))
+plt.title('Testing (Sensor Pattern)')
+plt.ylabel('Activation')
+plt.xlabel('Time')
+plt.show()
+
+#show confusion matrix
+cm = confusion_matrix(test_target, pred)
+figure(6)
+plt.matshow(cm)
+plt.colorbar()
+plt.ylabel('Target label')
+plt.xlabel('Predicted label')
+plt.show()
