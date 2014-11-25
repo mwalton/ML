@@ -12,19 +12,19 @@ from sklearn import svm
 from sklearn.metrics import confusion_matrix
 
 #load data
-reader = csv.reader(open("data/Otrain_4OBGtest/train_c.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/OBGtrain_4OBGtest/train_c.csv","rb"), delimiter=",")
 x = list(reader)
 train_c = np.array(x).astype('float')
 
-reader = csv.reader(open("data/Otrain_4OBGtest/train_a.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/OBGtrain_4OBGtest/train_a.csv","rb"), delimiter=",")
 x = list(reader)
 train_a = np.array(x).astype('float')
 
-reader = csv.reader(open("data/Otrain_4OBGtest/test_c.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/OBGtrain_4OBGtest/test_c.csv","rb"), delimiter=",")
 x = list(reader)
 test_c = np.array(x).astype('float')
 
-reader = csv.reader(open("data/Otrain_4OBGtest/test_a.csv","rb"), delimiter=",")
+reader = csv.reader(open("data/OBGtrain_4OBGtest/test_a.csv","rb"), delimiter=",")
 x = list(reader)
 test_a = np.array(x).astype('float')
 
