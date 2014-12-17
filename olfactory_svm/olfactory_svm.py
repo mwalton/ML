@@ -91,8 +91,8 @@ if (preprocess):
 # train svm classifier
 
 if (tuneHyperparams):
-    C_range = 10.0 ** np.arange(-2, 9)
-    gamma_range = 10.0 ** np.arange(-5, 4)
+    C_range = 10.0 ** np.arange(-1, 1)
+    gamma_range = 10.0 ** np.arange(-1, 1)
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedKFold(y=train_target, n_folds=3)
     grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
@@ -106,10 +106,13 @@ if (tuneHyperparams):
     scores = np.array(scores).reshape(len(C_range), len(gamma_range))
     pl.figure(10)
     pl.imshow(scores, interpolation='nearest', cmap=pl.cm.spectral)
+    pl.xlabel('gamma')
+    pl.ylabel('C')
     pl.colorbar()    
     pl.show()
 
 clf = svm.SVC()
+print("Default classifier: ", clf)
 clf.fit(train_a, train_target)
 
 # run the prediction
