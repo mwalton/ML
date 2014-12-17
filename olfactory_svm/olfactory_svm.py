@@ -18,7 +18,7 @@ from sklearn.metrics import confusion_matrix
 
 expType = 1
 preprocess = True
-tuneHyperparams = True
+tuneHyperparams = False
 
 ###############################################################################
 # Pick a dataset
@@ -145,13 +145,23 @@ plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
-pl.figure(2)
-plt.plot(train_target)
-plt.title('Training (Target Odorant)')
-plt.ylabel('Odorant Index')
+pl.figure(4)
+plt.plot(test_c)
+plt.title('Testing (Odorant Concentration)')
+plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
+#show confusion matrix
+cm = confusion_matrix(test_target, pred)
+pl.figure(7)
+plt.matshow(cm)
+plt.colorbar()
+plt.ylabel('Target label')
+plt.xlabel('Predicted label')
+plt.show()
+
+"""
 pl.figure(3, figsize=(6,6))
 plt.imshow(np.transpose(train_a)[:, 25:150])
 #plt.colorbar()
@@ -160,10 +170,10 @@ plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
 
-pl.figure(4)
-plt.plot(test_c)
-plt.title('Testing (Odorant Concentration)')
-plt.ylabel('Concentration')
+pl.figure(2)
+plt.plot(train_target)
+plt.title('Training (Target Odorant)')
+plt.ylabel('Odorant Index')
 plt.xlabel('Time')
 plt.show()
 
@@ -181,15 +191,7 @@ plt.title('Testing (Sensor Pattern)')
 plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
-
-#show confusion matrix
-cm = confusion_matrix(test_target, pred)
-pl.figure(7)
-plt.matshow(cm)
-plt.colorbar()
-plt.ylabel('Target label')
-plt.xlabel('Predicted label')
-plt.show()
+"""
 
 if (tuneHyperparams):
     cm = confusion_matrix(test_target, bestPred)
