@@ -16,7 +16,12 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import confusion_matrix
 
-expType = 3
+def enum(**enums):
+    return type('Enum', (), enums)
+
+ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_BgTest = 2, RS_NoBgTrain_NoBg_test = 3, RS_BgTrain_BgTest = 4, RS_NoBgTrain_BgTest = 5)
+ 
+exp = ExperimentTypes.NoBgTrain_NoBg_test
 preprocess = True
 tuneHyperparams = False
 
@@ -24,22 +29,32 @@ tuneHyperparams = False
 # Pick a dataset
 # As the project grows, this should be replaced by a line arg.
 # to set a containing folder then run on the data in that dir
-if (expType == 0):
+if (exp == ExperimentTypes.NoBgTrain_NoBg_test):
     train_conc_file = "data/Otrain_4Otest/train_c.csv"
     train_actv_file = "data/Otrain_4Otest/train_a.csv"
     test_conc_file = "data/Otrain_4Otest/test_c.csv"
     test_actv_file = "data/Otrain_4Otest/test_a.csv"
-elif (expType == 1):
+elif (exp == ExperimentTypes.BgTrain_BgTest):
     train_conc_file = "data/OBGtrain_4OBGtest/train_c.csv"
     train_actv_file = "data/OBGtrain_4OBGtest/train_a.csv"
     test_conc_file = "data/OBGtrain_4OBGtest/test_c.csv"
     test_actv_file = "data/OBGtrain_4OBGtest/test_a.csv"
-elif (expType == 2):
+elif (exp == ExperimentTypes.NoBgTrain_BgTest):
     train_conc_file = "data/Otrain_4OBGtest/train_c.csv"
     train_actv_file = "data/Otrain_4OBGtest/train_a.csv"
     test_conc_file = "data/Otrain_4OBGtest/test_c.csv"
     test_actv_file = "data/Otrain_4OBGtest/test_a.csv"
-else:
+elif (exp == ExperimentTypes.RS_NoBgTrain_NoBg_test):
+    train_conc_file = "data/Otrain_4Otest/train_c.csv"
+    train_actv_file = "data/Otrain_4Otest/train_a_rs.csv"
+    test_conc_file = "data/Otrain_4Otest/test_c.csv"
+    test_actv_file = "data/Otrain_4Otest/test_a_rs.csv"
+elif (exp == ExperimentTypes.RS_BgTrain_BgTest):
+    train_conc_file = "data/OBGtrain_4OBGtest/train_c.csv"
+    train_actv_file = "data/OBGtrain_4OBGtest/train_a_rs.csv"
+    test_conc_file = "data/OBGtrain_4OBGtest/test_c.csv"
+    test_actv_file = "data/OBGtrain_4OBGtest/test_a_rs.csv"
+elif (exp == ExperimentTypes.RS_NoBgTrain_BgTest):
     train_conc_file = "data/Otrain_4OBGtest/train_c.csv"
     train_actv_file = "data/Otrain_4OBGtest/train_a_rs.csv"
     test_conc_file = "data/Otrain_4OBGtest/test_c.csv"
@@ -165,6 +180,14 @@ plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
 
+pl.figure(6)
+plt.imshow(np.transpose(test_a))
+#plt.colorbar()
+plt.title('Testing (Sensor Pattern)')
+plt.ylabel('Activation')
+plt.xlabel('Time')
+plt.show()
+
 #show confusion matrix
 cm = confusion_matrix(test_target, pred)
 pl.figure(7)
@@ -194,14 +217,6 @@ pl.figure(5)
 plt.plot(test_target)
 plt.title('Testing (Target Odorant)')
 plt.ylabel('Odorant Index')
-plt.xlabel('Time')
-plt.show()
-
-pl.figure(6)
-plt.imshow(np.transpose(test_a))
-#plt.colorbar()
-plt.title('Testing (Sensor Pattern)')
-plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
 """
