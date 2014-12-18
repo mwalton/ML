@@ -18,7 +18,7 @@ from sklearn.metrics import confusion_matrix
 
 expType = 1
 preprocess = True
-tuneHyperparams = True
+tuneHyperparams = False
 
 ###############################################################################
 # Pick a dataset
@@ -91,8 +91,8 @@ if (preprocess):
 # train svm classifier
 
 if (tuneHyperparams):
-    C_range = 10.0 ** np.arange(-2, 9)
-    gamma_range = 10.0 ** np.arange(-5, 4)
+    C_range = 10.0 ** np.arange(-1, 1)
+    gamma_range = 10.0 ** np.arange(-1, 1)
     param_grid = dict(gamma=gamma_range, C=C_range)
     cv = StratifiedKFold(y=train_target, n_folds=3)
     grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
@@ -106,10 +106,13 @@ if (tuneHyperparams):
     scores = np.array(scores).reshape(len(C_range), len(gamma_range))
     pl.figure(10)
     pl.imshow(scores, interpolation='nearest', cmap=pl.cm.spectral)
+    pl.xlabel('gamma')
+    pl.ylabel('C')
     pl.colorbar()    
     pl.show()
 
 clf = svm.SVC()
+print("Default classifier: ", clf)
 clf.fit(train_a, train_target)
 
 # run the prediction
@@ -142,13 +145,23 @@ plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
-pl.figure(2)
-plt.plot(train_target)
-plt.title('Training (Target Odorant)')
-plt.ylabel('Odorant Index')
+pl.figure(4)
+plt.plot(test_c)
+plt.title('Testing (Odorant Concentration)')
+plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
 
+#show confusion matrix
+cm = confusion_matrix(test_target, pred)
+pl.figure(7)
+plt.matshow(cm)
+plt.colorbar()
+plt.ylabel('Target label')
+plt.xlabel('Predicted label')
+plt.show()
+
+"""
 pl.figure(3, figsize=(6,6))
 plt.imshow(np.transpose(train_a)[:, 25:150])
 #plt.colorbar()
@@ -157,10 +170,10 @@ plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
 
-pl.figure(4)
-plt.plot(test_c)
-plt.title('Testing (Odorant Concentration)')
-plt.ylabel('Concentration')
+pl.figure(2)
+plt.plot(train_target)
+plt.title('Training (Target Odorant)')
+plt.ylabel('Odorant Index')
 plt.xlabel('Time')
 plt.show()
 
@@ -178,15 +191,7 @@ plt.title('Testing (Sensor Pattern)')
 plt.ylabel('Activation')
 plt.xlabel('Time')
 plt.show()
-
-#show confusion matrix
-cm = confusion_matrix(test_target, pred)
-pl.figure(7)
-plt.matshow(cm)
-plt.colorbar()
-plt.ylabel('Target label')
-plt.xlabel('Predicted label')
-plt.show()
+"""
 
 if (tuneHyperparams):
     cm = confusion_matrix(test_target, bestPred)
