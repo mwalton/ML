@@ -15,13 +15,20 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
+#this is set up as a multiclass problem, could maybe modify to a multilabel
+#problem and then treat the p(label) as a prediciton / reproduction of the
+#odorant concentration, this would be really cool if I can make this work
+#from sklearn.metrics import average_precision_score
 
 def enum(**enums):
     return type('Enum', (), enums)
 
 ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_BgTest = 2, RS_NoBgTrain_NoBg_test = 3, RS_BgTrain_BgTest = 4, RS_NoBgTrain_BgTest = 5)
- 
-exp = ExperimentTypes.NoBgTrain_NoBg_test
+
+target_names = ['red', 'green', 'blue', 'yellow']
+exp = ExperimentTypes.RS_NoBgTrain_NoBg_test
 preprocess = True
 tuneHyperparams = False
 
@@ -79,7 +86,7 @@ x = list(reader)
 test_a = np.array(x).astype('float')
 
 ###############################################################################
-# Clean up the data
+# Convert the concentration labels to classes
 #get max(concentration) foreach t (target is max odorant index)
 train_target = np.zeros([train_c.shape[0]], dtype=float)
 
@@ -101,11 +108,11 @@ for i in range(test_c.shape[0]):
 
 ###############################################################################
 # Data Pre-processing
-# Improves classification on 
 if (preprocess):
     scaler = StandardScaler()
-    train_a = scaler.fit_transform(train_a, train_target)
-
+    train_a = scaler.fit_transform(train_a)
+    test_a = scaler.transform(test_a)
+    
 ###############################################################################
 # Train and test the SVM
 # train svm classifier
@@ -138,21 +145,14 @@ clf.fit(train_a, train_target)
 # run the prediction
 pred = clf.predict(test_a)
 
+print(classification_report(test_target, pred, target_names=target_names))
+print("Accuracy Score", accuracy_score(test_target, pred))
+#print("AP", average_precision_score(test_target, pred))
 # test classification
-correctPredictions = 0
-bestClfCorrect = 0
-for i in range(pred.shape[0]):
-    if(pred[i] == test_target[i]):
-        correctPredictions += 1.0
-    if (tuneHyperparams and bestPred[i] == test_target[i]):
-        bestClfCorrect += 1.0
 
-defaultClfPerformance = correctPredictions / test_target.shape[0]
-optoClfPerformance = bestClfCorrect / test_target.shape[0]
-
-print("Default H-params", defaultClfPerformance)
-print("Optomized H-params", optoClfPerformance)
-print("Difference", optoClfPerformance - defaultClfPerformance)
+if (tuneHyperparams):
+    print(classification_report(test_target, bestPred, target_names=target_names))
+    print("Accuracy Score", accuracy_score(test_target, bestPred))
 
 ###############################################################################
 #PLOT DATA
@@ -193,6 +193,7 @@ cm = confusion_matrix(test_target, pred)
 pl.figure(7)
 plt.matshow(cm)
 plt.colorbar()
+plt.title('SVC')
 plt.ylabel('Target label')
 plt.xlabel('Predicted label')
 plt.show()
