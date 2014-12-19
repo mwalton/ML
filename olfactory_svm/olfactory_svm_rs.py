@@ -22,15 +22,35 @@ from sklearn.metrics import accuracy_score
 #odorant concentration, this would be really cool if I can make this work
 #from sklearn.metrics import average_precision_score
 
+class RSA:
+    def __init__(self, latencyScale, sigmoidRate, maxLatency):
+        self.latencyScale = latencyScale
+        self.sigmoidRate = sigmoidRate
+        self.desensitize = False
+    def spikeLatencies(self, X):
+        if (self.desensitize):
+            latency = X
+        else:
+            if (self.sigmoidRate):
+                rate = 1.0/(1.0 + np.exp(-(X-0.5)*10.0))                
+                latency = self.latencyScale / rate
+            else:
+                latency = self.latencyScale / X
+        # find all values greater than maxL and set to maxL
+        maxed = latency < self.maxLatency
+        latency[maxed] = self.maxLatency
+    def countNspikes(self)
+ 
 def enum(**enums):
     return type('Enum', (), enums)
 
 ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_BgTest = 2, RS_NoBgTrain_NoBg_test = 3, RS_BgTrain_BgTest = 4, RS_NoBgTrain_BgTest = 5)
 
 target_names = ['red', 'green', 'blue', 'yellow']
-exp = ExperimentTypes.RS_NoBgTrain_NoBg_test
-preprocess = True
+exp = ExperimentTypes.NoBgTrain_NoBg_test
+preprocess = False
 tuneHyperparams = False
+doRsa = True
 
 ###############################################################################
 # Pick a dataset
@@ -112,6 +132,10 @@ if (preprocess):
     scaler = StandardScaler()
     train_a = scaler.fit_transform(train_a)
     test_a = scaler.transform(test_a)
+    
+if (doRsa):
+    rsa = RSA(latencyScale=1, sigmoidRate=False, maxLatency=1000)
+    train_a = rsa.spikeLatencies(train_a)
     
 ###############################################################################
 # Train and test the SVM
