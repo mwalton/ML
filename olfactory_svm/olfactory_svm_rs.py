@@ -23,9 +23,12 @@ from sklearn.metrics import accuracy_score
 #from sklearn.metrics import average_precision_score
 
 class RSA:
-    def __init__(self, latencyScale, sigmoidRate, maxLatency):
+    def __init__(self, latencyScale, sigmoidRate, normalizeSpikes, maxLatency, maxSpikes):
         self.latencyScale = latencyScale
         self.sigmoidRate = sigmoidRate
+        self.maxSpikes = maxSpikes
+        self.maxLatency = maxLatency
+        self.normalizeSpikes = normalizeSpikes
         self.desensitize = False
     def spikeLatencies(self, X):
         if (self.desensitize):
@@ -37,9 +40,37 @@ class RSA:
             else:
                 latency = self.latencyScale / X
         # find all values greater than maxL and set to maxL
-        maxed = latency < self.maxLatency
+        maxed = latency > self.maxLatency
         latency[maxed] = self.maxLatency
-    def countNspikes(self)
+        return latency
+        
+    def countNspikes(self, X):
+        #round latency to nearest int and set 0 <- 1        
+        latency = np.round(self.spikeLatencies(X), 0)
+        minL = latency <= 0.0
+        latency[minL] = 1.0
+        
+        intergrationWindow = np.ones(latency.shape[0])
+        totalSpikes = np.zeros(latency.shape[0])
+        spikeTrain = np.zeros(latency.shape)
+        
+        for i in range(latency.shape[0]):
+            #totalSpikes = 0
+            while (totalSpikes[i] < self.maxSpikes and intergrationWindow[i] < self.maxLatency):
+                for j in range(latency.shape[1]):
+                    if (intergrationWindow[i] % latency[i][j] == 0):
+                        totalSpikes[i] += 1
+                        spikeTrain[i][j] += 1
+                intergrationWindow[i] += 1
+        
+        if (self.normalizeSpikes):
+            spikeScale = self.maxSpikes / np.transpose(totalSpikes)
+            spikeTrain *= spikeScale
+            
+        return spikeTrain
+                
+                    
+                    
  
 def enum(**enums):
     return type('Enum', (), enums)
@@ -48,7 +79,7 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
-preprocess = False
+preprocess = True
 tuneHyperparams = False
 doRsa = True
 
@@ -128,14 +159,15 @@ for i in range(test_c.shape[0]):
 
 ###############################################################################
 # Data Pre-processing
+if (doRsa):
+    rsa = RSA(latencyScale=1, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
+    train_a = rsa.countNspikes(train_a)    
+    test_a = rsa.countNspikes(test_a)
+
 if (preprocess):
     scaler = StandardScaler()
     train_a = scaler.fit_transform(train_a)
     test_a = scaler.transform(test_a)
-    
-if (doRsa):
-    rsa = RSA(latencyScale=1, sigmoidRate=False, maxLatency=1000)
-    train_a = rsa.spikeLatencies(train_a)
     
 ###############################################################################
 # Train and test the SVM
