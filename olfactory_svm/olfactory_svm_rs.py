@@ -82,7 +82,7 @@ target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
 standardize = True
 tuneHyperparams = True
-doRsa = False
+doRsa = True
 
 ###############################################################################
 # Pick a dataset
@@ -162,16 +162,21 @@ if (standardize):
 if (tuneHyperparams):
     #set the parameter grid
   
+    
     param_grid = [{'kernel': ['rbf'], 'gamma': [1e-1, 1e-5],
                      'C': [1, 10, 100, 1000]},
                     {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
-
-    #kernel_range = ['rbf', 'linear', 'poly', 'sigmoid']
-    #gamma_range = np.arange(start=1e-3, stop=1e-1, step=1e-3)
-    #C_range = np.arange(1,1000)
-    #param_grid = dict(gamma=gamma_range, C=C_range)
-    #configure stratified k-fold cross validation, run grid search                    
+    """
+    kernel_range = ['rbf', 'linear']
+    gamma_range = np.arange(start=1e-3, stop=1e-1, step=1e-3)
+    C_range = np.arange(1,1000)
+    param_grid = dict(gamma=gamma_range, C=C_range)
+    """    
+    
+    #configure stratified k-fold cross validation, run grid search                  
     cv = StratifiedKFold(y=train_target, n_folds=3, shuffle=True)
+    #setting n_jobs=-1 will run the ensemble in parallel, this only works on
+    #*nix machines, windows has overhead issues with the process forking op
     grid = GridSearchCV(svm.SVC(C=1), param_grid=param_grid, cv=cv)
     grid.fit(train_a, train_target)
     print("Best Classifier: %s" % grid.best_estimator_)
@@ -203,6 +208,8 @@ pred = clf.predict(test_a)
 pl.figure(1)
 plt.plot(train_c)
 plt.title('Training (Odorant Concentration)')
+plt.yscale('log')
+plt.ylim(1e-4, 1)
 plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
@@ -210,6 +217,8 @@ plt.show()
 pl.figure(2)
 plt.plot(test_c)
 plt.title('Testing (Odorant Concentration)')
+plt.yscale('log')
+plt.ylim(1e-4, 1)
 plt.ylabel('Concentration')
 plt.xlabel('Time')
 plt.show()
