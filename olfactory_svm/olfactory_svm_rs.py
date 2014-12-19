@@ -64,8 +64,8 @@ class RSA:
                 intergrationWindow[i] += 1
         
         if (self.normalizeSpikes):
-            spikeScale = self.maxSpikes / np.transpose(totalSpikes)
-            spikeTrain *= spikeScale
+            spikeScale = self.maxSpikes / totalSpikes
+            spikeTrain = np.transpose(spikeScale * np.transpose(spikeTrain))
             
         return spikeTrain
                 
@@ -79,7 +79,7 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
-preprocess = True
+preprocess = False
 tuneHyperparams = False
 doRsa = True
 
