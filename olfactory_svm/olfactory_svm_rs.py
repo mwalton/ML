@@ -51,19 +51,23 @@ class RSA:
         minL = latency <= 0.0
         latency[minL] = 1.0
         
-        intergrationWindow = np.ones(latency.shape[0])
+        #intergrationWindow = np.ones(latency.shape[0])
         totalSpikes = np.zeros(latency.shape[0])
         spikeTrain = np.zeros(latency.shape)
-        
+
         for i in range(latency.shape[0]):
-            if (not (latency[i][0] == latency[i].all)):
-                while (totalSpikes[i] < self.maxSpikes and intergrationWindow[i] < self.maxLatency):
-                    for j in range(latency.shape[1]):
-                        if (intergrationWindow[i] % latency[i][j] == 0):
-                            totalSpikes[i] += 1
-                            spikeTrain[i][j] += 1
-                    intergrationWindow[i] += 1
-        
+            for j in range(self.maxLatency):
+                spikeEmitted = ((j + 1) % latency[i] == 0)
+                notMax = latency[i] < self.maxLatency
+                
+                spikeIdx = np.bitwise_and(spikeEmitted, notMax)
+                
+                spikeTrain[i][spikeIdx] += 1
+                totalSpikes[i] += np.sum(spikeIdx)
+                if (totalSpikes[i] >= self.maxSpikes): break
+                #intergrationWindow[i] += 1
+            
+
         if (self.normalizeSpikes):
             spikeScale = np.ones(totalSpikes.shape)
             spikesEmitted = totalSpikes > 0.0            
@@ -84,7 +88,7 @@ target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
 standardize = True
 tuneHyperparams = False
-doRsa = False
+doRsa = True
 
 ###############################################################################
 # Pick a dataset
