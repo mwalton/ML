@@ -79,7 +79,7 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
-preprocess = False
+standardize = False
 tuneHyperparams = False
 doRsa = True
 
@@ -160,11 +160,11 @@ for i in range(test_c.shape[0]):
 ###############################################################################
 # Data Pre-processing
 if (doRsa):
-    rsa = RSA(latencyScale=1, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
-    train_a = rsa.countNspikes(train_a)    
+    rsa = RSA(latencyScale=100, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
+    train_a = rsa.countNspikes(train_a)
     test_a = rsa.countNspikes(test_a)
 
-if (preprocess):
+if (standardize):
     scaler = StandardScaler()
     train_a = scaler.fit_transform(train_a)
     test_a = scaler.transform(test_a)
@@ -201,9 +201,6 @@ clf.fit(train_a, train_target)
 # run the prediction
 pred = clf.predict(test_a)
 
-print(classification_report(test_target, pred, target_names=target_names))
-print("Accuracy Score", accuracy_score(test_target, pred))
-#print("AP", average_precision_score(test_target, pred))
 # test classification
 
 if (tuneHyperparams):
@@ -253,6 +250,10 @@ plt.title('SVC')
 plt.ylabel('Target label')
 plt.xlabel('Predicted label')
 plt.show()
+
+print(classification_report(test_target, pred, target_names=target_names))
+print("Accuracy Score", accuracy_score(test_target, pred))
+#print("AP", average_precision_score(test_target, pred))
 
 """
 pl.figure(3, figsize=(6,6))
