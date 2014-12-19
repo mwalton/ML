@@ -30,12 +30,13 @@ class RSA:
         self.maxLatency = maxLatency
         self.normalizeSpikes = normalizeSpikes
         self.desensitize = False
+    
     def spikeLatencies(self, X):
         if (self.desensitize):
             latency = X
         else:
             if (self.sigmoidRate):
-                rate = 1.0/(1.0 + np.exp(-(X-0.5)*10.0))                
+                rate = 1.0/(1.0 + np.exp(-(X-0.5)*10.0))
                 latency = self.latencyScale / rate
             else:
                 latency = self.latencyScale / X
@@ -55,15 +56,14 @@ class RSA:
         spikeTrain = np.zeros(latency.shape)
         
         for i in range(latency.shape[0]):
-            #totalSpikes = 0
-            while (totalSpikes[i] < self.maxSpikes and intergrationWindow[i] < self.maxLatency):
-                for j in range(latency.shape[1]):
-                    if (intergrationWindow[i] % latency[i][j] == 0):
-                        totalSpikes[i] += 1
-                        spikeTrain[i][j] += 1
-                intergrationWindow[i] += 1
-                if (intergrationWindow[i] > self.maxLatency): break;
-                if (totalSpikes[i] > self.maxSpikes): break;
+            if (not (latency[i][0] == latency[i].all)):
+                while (totalSpikes[i] < self.maxSpikes and intergrationWindow[i] < self.maxLatency):
+                    for j in range(latency.shape[1]):
+                        if (intergrationWindow[i] % latency[i][j] == 0):
+                            totalSpikes[i] += 1
+                            spikeTrain[i][j] += 1
+                    intergrationWindow[i] += 1
+        
         if (self.normalizeSpikes):
             spikeScale = np.ones(totalSpikes.shape)
             spikesEmitted = totalSpikes > 0.0            
@@ -82,9 +82,9 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
-standardize = False
+standardize = True
 tuneHyperparams = False
-doRsa = True
+doRsa = False
 
 ###############################################################################
 # Pick a dataset
@@ -141,24 +141,9 @@ test_a = np.array(x).astype('float')
 
 ###############################################################################
 # Convert the concentration labels to classes
-#get max(concentration) foreach t (target is max odorant index)
-train_target = np.zeros([train_c.shape[0]], dtype=float)
 
-for i in range(train_c.shape[0]):
-    maxC = 0
-    for j in range(train_c.shape[1]):
-        if (train_c[i][j] > maxC and j > 0):
-            maxC = train_c[i][j]
-            train_target[i] = j - 1
-            
-test_target = np.zeros([test_c.shape[0]], dtype=float)
-
-for i in range(test_c.shape[0]):
-    maxC = 0
-    for j in range(test_c.shape[1]):
-        if (test_c[i][j] > maxC and j > 0):
-            maxC = test_c[i][j]
-            test_target[i] = j - 1
+train_target = np.argmax(train_c, axis=1)
+test_target = np.argmax(test_c, axis=1)
 
 ###############################################################################
 # Data Pre-processing
