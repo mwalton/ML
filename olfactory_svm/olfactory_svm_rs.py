@@ -62,9 +62,12 @@ class RSA:
                         totalSpikes[i] += 1
                         spikeTrain[i][j] += 1
                 intergrationWindow[i] += 1
-        
+                if (intergrationWindow[i] > self.maxLatency): break;
+                if (totalSpikes[i] > self.maxSpikes): break;
         if (self.normalizeSpikes):
-            spikeScale = self.maxSpikes / totalSpikes
+            spikeScale = np.ones(totalSpikes.shape)
+            spikesEmitted = totalSpikes > 0.0            
+            spikeScale[spikesEmitted] = self.maxSpikes / totalSpikes[spikesEmitted]          
             spikeTrain = np.transpose(spikeScale * np.transpose(spikeTrain))
             
         return spikeTrain
