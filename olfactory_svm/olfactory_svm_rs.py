@@ -19,8 +19,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 #this is set up as a multiclass problem, could maybe modify to a multilabel
 #problem and then treat the p(label) as a prediciton / reproduction of the
-#odorant concentration, this would be really cool if I can make this work
-#from sklearn.metrics import average_precision_score
+#odorant concentration, this would be really cool if that representation works
 
 class RSA:
     def __init__(self, latencyScale, sigmoidRate, normalizeSpikes, maxLatency, maxSpikes):
@@ -65,8 +64,6 @@ class RSA:
                 spikeTrain[i][spikeIdx] += 1
                 totalSpikes[i] += np.sum(spikeIdx)
                 if (totalSpikes[i] >= self.maxSpikes): break
-                #intergrationWindow[i] += 1
-            
 
         if (self.normalizeSpikes):
             spikeScale = np.ones(totalSpikes.shape)
@@ -76,9 +73,6 @@ class RSA:
             
         return spikeTrain
                 
-                    
-                    
- 
 def enum(**enums):
     return type('Enum', (), enums)
 
@@ -87,8 +81,8 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
 standardize = True
-tuneHyperparams = False
-doRsa = True
+tuneHyperparams = True
+doRsa = False
 
 ###############################################################################
 # Pick a dataset
@@ -145,7 +139,6 @@ test_a = np.array(x).astype('float')
 
 ###############################################################################
 # Convert the concentration labels to classes
-
 train_target = np.argmax(train_c, axis=1)
 test_target = np.argmax(test_c, axis=1)
 
@@ -162,42 +155,46 @@ if (standardize):
     test_a = scaler.transform(test_a)
     
 ###############################################################################
-# Train and test the SVM
-# train svm classifier
+# Train the classifier
+# if tuneHyperparams, estimate optimal params via grid search
+# using stratified k-folds cross validation
 
 if (tuneHyperparams):
-    C_range = 10.0 ** np.arange(-1, 1)
-    gamma_range = 10.0 ** np.arange(-1, 1)
-    param_grid = dict(gamma=gamma_range, C=C_range)
-    cv = StratifiedKFold(y=train_target, n_folds=3)
-    grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
+    #set the parameter grid
+  
+    param_grid = [{'kernel': ['rbf'], 'gamma': [1e-1, 1e-5],
+                     'C': [1, 10, 100, 1000]},
+                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+
+    #kernel_range = ['rbf', 'linear', 'poly', 'sigmoid']
+    #gamma_range = np.arange(start=1e-3, stop=1e-1, step=1e-3)
+    #C_range = np.arange(1,1000)
+    #param_grid = dict(gamma=gamma_range, C=C_range)
+    #configure stratified k-fold cross validation, run grid search                    
+    cv = StratifiedKFold(y=train_target, n_folds=3, shuffle=True)
+    grid = GridSearchCV(svm.SVC(C=1), param_grid=param_grid, cv=cv)
     grid.fit(train_a, train_target)
-    print("Best Classifier: ", grid.best_estimator_)
-    bestClf = grid.best_estimator_
-    bestPred = bestClf.predict(test_a)
+    print("Best Classifier: %s" % grid.best_estimator_)
+    clf = grid.best_estimator_
     
+    """    
+    #visualize the resulting grid
     score_dict = grid.grid_scores_
     scores = [z[1] for z in score_dict]
-    scores = np.array(scores).reshape(len(C_range), len(gamma_range))
+    scores = np.array(scores).reshape(, len(gamma_range))
     pl.figure(10)
     pl.imshow(scores, interpolation='nearest', cmap=pl.cm.spectral)
     pl.xlabel('gamma')
     pl.ylabel('C')
-    pl.colorbar()    
+    pl.colorbar()
     pl.show()
-
-clf = svm.SVC()
-print("Default classifier: ", clf)
-clf.fit(train_a, train_target)
+    """
+else:
+    clf = svm.SVC()
+    clf.fit(train_a, train_target)
 
 # run the prediction
 pred = clf.predict(test_a)
-
-# test classification
-
-if (tuneHyperparams):
-    print(classification_report(test_target, bestPred, target_names=target_names))
-    print("Accuracy Score", accuracy_score(test_target, bestPred))
 
 ###############################################################################
 #PLOT DATA
@@ -244,38 +241,5 @@ plt.xlabel('Predicted label')
 plt.show()
 
 print(classification_report(test_target, pred, target_names=target_names))
-print("Accuracy Score", accuracy_score(test_target, pred))
+print("Accuracy Score: %s" % accuracy_score(test_target, pred))
 #print("AP", average_precision_score(test_target, pred))
-
-"""
-pl.figure(3, figsize=(6,6))
-plt.imshow(np.transpose(train_a)[:, 25:150])
-#plt.colorbar()
-plt.title('Training (Sensor Pattern)')
-plt.ylabel('Activation')
-plt.xlabel('Time')
-plt.show()
-
-pl.figure(2)
-plt.plot(train_target)
-plt.title('Training (Target Odorant)')
-plt.ylabel('Odorant Index')
-plt.xlabel('Time')
-plt.show()
-
-pl.figure(5)
-plt.plot(test_target)
-plt.title('Testing (Target Odorant)')
-plt.ylabel('Odorant Index')
-plt.xlabel('Time')
-plt.show()
-"""
-
-if (tuneHyperparams):
-    cm = confusion_matrix(test_target, bestPred)
-    pl.figure(8)
-    plt.matshow(cm)
-    plt.colorbar()
-    plt.ylabel('Target label')
-    plt.xlabel('Predicted label')
-    plt.show()
