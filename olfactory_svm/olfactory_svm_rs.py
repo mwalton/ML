@@ -158,7 +158,7 @@ if (standardize):
     test_a = scaler.transform(test_a)
     
 ###############################################################################
-# Build ensembles of classifiers based on some parameters (random, grid, predef etc.)
+# Build multiple classifiers based on some parameter space (random, grid, etc.)
 # assess each using stratified k-folds of test data, select the best estimator
 
 if (parameterEstimation == 'none'):
@@ -204,20 +204,9 @@ else:
     print("Best Classifier: %s" % grid.best_estimator_)
     clf = grid.best_estimator_
     
-    """    
-    #visualize the resulting grid
-    score_dict = grid.grid_scores_
-    scores = [z[1] for z in score_dict]
-    scores = np.array(scores).reshape(, len(gamma_range))
-    pl.figure(10)
-    pl.imshow(scores, interpolation='nearest', cmap=pl.cm.spectral)
-    pl.xlabel('gamma')
-    pl.ylabel('C')
-    pl.colorbar()
-    pl.show()
-    """
+###############################################################################
+#RUN PREDICTION ON 
     
-# run the prediction
 pred = clf.predict(test_a)
 
 ###############################################################################
