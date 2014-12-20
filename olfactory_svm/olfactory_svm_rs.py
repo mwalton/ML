@@ -9,11 +9,13 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pylab as pl
+import scipy as sp
 
 from sklearn import svm
 from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.grid_search import GridSearchCV
+from sklearn.grid_search import RandomizedSearchCV
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
@@ -81,7 +83,8 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
 standardize = True
-tuneHyperparams = True
+parameterEstimation = 'fixed_range' #options: none, exhaustive, random, fixed_range
+rand_iter = 100 #number of samples in the parameter space to sample in random estimation mode
 doRsa = True
 
 ###############################################################################
@@ -155,29 +158,48 @@ if (standardize):
     test_a = scaler.transform(test_a)
     
 ###############################################################################
-# Train the classifier
-# if tuneHyperparams, estimate optimal params via grid search
-# using stratified k-folds cross validation
+# Build ensembles of classifiers based on some parameters (random, grid, predef etc.)
+# assess each using stratified k-folds of test data, select the best estimator
 
-if (tuneHyperparams):
-    #set the parameter grid
-  
-    
-    param_grid = [{'kernel': ['rbf'], 'gamma': [1e-1, 1e-5],
-                     'C': [1, 10, 100, 1000]},
-                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
-    """
-    kernel_range = ['rbf', 'linear']
-    gamma_range = np.arange(start=1e-3, stop=1e-1, step=1e-3)
-    C_range = np.arange(1,1000)
-    param_grid = dict(gamma=gamma_range, C=C_range)
-    """    
-    
-    #configure stratified k-fold cross validation, run grid search                  
+if (parameterEstimation == 'none'):
+    clf = svm.SVC()
+    clf.fit(train_a, train_target)
+else:
+    #configure stratified k-fold cross validation               
     cv = StratifiedKFold(y=train_target, n_folds=3, shuffle=True)
-    #setting n_jobs=-1 will run the ensemble in parallel, this only works on
-    #*nix machines, windows has overhead issues with the process forking op
-    grid = GridSearchCV(svm.SVC(C=1), param_grid=param_grid, cv=cv)
+    
+    #set the parameter grid
+    if (parameterEstimation == 'exhaustive'):
+        #do exhaustive gridsearch within some range
+        kernel_range = ['rbf', 'linear']
+        gamma_range = np.arange(start=1e-3, stop=1e-1, step=1e-3)
+        C_range = np.arange(1,1000)
+        param_grid = dict(kernel=kernel_range, gamma=gamma_range, C=C_range)
+        grid = GridSearchCV(svm.SVC(C=1), param_grid=param_grid, cv=cv)
+                        
+    elif(parameterEstimation == 'random'):
+        #randomly sample values within some distribution of params
+        kernel_range = ['rbf', 'linear']
+        class_weight_range = ['auto', None]
+        gamma_range_range =  sp.stats.expon(scale=.1)
+        C_range = sp.stats.expon(scale=100)
+        param_dist = dict(kernel=kernel_range, gamma=gamma_range, C=C_range, class_weight=class_weight_range)
+        
+        grid = RandomizedSearchCV(svm.SVC(), param_distributions=param_dist, cv=cv, n_iter=rand_iter)
+        
+    elif(parameterEstimation == 'fixed_range'):
+        #exhaustive search on an explictly defined dictionary of params
+        param_grid = [{'kernel': ['rbf'], 'gamma': [1e-1, 1e-5],
+                        'C': [1, 10, 100, 1000]},
+                        {'kernel': ['linear'],
+                        'C': [1, 10, 100, 1000]}]
+        grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
+    
+    else:
+        print("Invalid paramEstimation Setting")
+        exit(1)   
+
+    #fit and validate until we find the best estimator within the range
     grid.fit(train_a, train_target)
     print("Best Classifier: %s" % grid.best_estimator_)
     clf = grid.best_estimator_
@@ -194,10 +216,7 @@ if (tuneHyperparams):
     pl.colorbar()
     pl.show()
     """
-else:
-    clf = svm.SVC()
-    clf.fit(train_a, train_target)
-
+    
 # run the prediction
 pred = clf.predict(test_a)
 
