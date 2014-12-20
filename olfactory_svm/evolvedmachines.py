@@ -35,7 +35,13 @@ class RSA:
         #intergrationWindow = np.ones(latency.shape[0])
         totalSpikes = np.zeros(latency.shape[0])
         spikeTrain = np.zeros(latency.shape)
-
+        
+        #original implementation was triple-nested, needs to be vectorized
+        #this was simple enough for the inner loop, use bitmasking to
+        #check if a spike is emitted on each tstep, and that its latency != max
+        #for the outer loop this is a little tougher, how can we achieve
+        #a spike limit w/o actually stepping through the funciton? it may
+        #be easier to just do all the preprocessing in the fluid sim...
         for i in range(latency.shape[0]):
             for j in range(self.maxLatency):
                 spikeEmitted = ((j + 1) % latency[i] == 0)

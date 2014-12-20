@@ -28,10 +28,10 @@ from sklearn.metrics import accuracy_score
 dataFolder = "data/Otrain_4Otest/" #folders: Otrain_4Otest, OBGtrain_4OBGtest, Otrain_4OBGtest
 target_names = ['odorant 0', 'odorant 1', 'odorant 2', 'odorant 3']
 
-addNoise = True
-doRsa = False
+addNoise = False
+doRsa = True
 standardize = True
-parameterEstimation = 'none' #options: none, exhaustive, random, fixed_range
+parameterEstimation = 'random' #options: none, exhaustive, random, fixed_range
 rand_iter = 10 #number of samples in the parameter space to sample in random estimation mode
 
 ###############################################################################
@@ -54,8 +54,8 @@ test_a = np.array(x).astype('float')
 
 ###############################################################################
 # Convert the concentration labels to classes
-train_target = np.argmax(train_c, axis=1)
-test_target = np.argmax(test_c, axis=1)
+train_target = np.argmax(train_c[:,1:5], axis=1)
+test_target = np.argmax(test_c[:,1:5], axis=1)
 
 ###############################################################################
 # Add noise to training and test sets
@@ -106,7 +106,7 @@ else:
         #randomly sample values within some distribution of params
         kernel_range = ['rbf', 'linear']
         class_weight_range = ['auto', None]
-        gamma_range_range =  sp.stats.expon(scale=.1)
+        gamma_range =  sp.stats.expon(scale=.1)
         C_range = sp.stats.expon(scale=100)
         param_dist = dict(kernel=kernel_range, gamma=gamma_range, C=C_range,
                           class_weight=class_weight_range)
@@ -134,7 +134,6 @@ else:
     
 ###############################################################################
 #RUN PREDICTION
-    
 pred = clf.predict(test_a)
 
 ###############################################################################
