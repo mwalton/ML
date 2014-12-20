@@ -5,11 +5,16 @@ Created on Fri Nov 21 16:41:42 2014
 @author: michaelwalton
 """
 
+#this is set up as a multiclass problem, could maybe modify to a multilabel
+#problem and then treat the p(label) as a prediciton / reproduction of the
+#odorant concentration, this would be really cool if that representation works
+
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pylab as pl
 import scipy as sp
+import evolvedmachines as em
 
 from sklearn import svm
 from sklearn.preprocessing import StandardScaler
@@ -19,108 +24,20 @@ from sklearn.grid_search import RandomizedSearchCV
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
-#this is set up as a multiclass problem, could maybe modify to a multilabel
-#problem and then treat the p(label) as a prediciton / reproduction of the
-#odorant concentration, this would be really cool if that representation works
 
-class RSA:
-    def __init__(self, latencyScale, sigmoidRate, normalizeSpikes, maxLatency, maxSpikes):
-        self.latencyScale = latencyScale
-        self.sigmoidRate = sigmoidRate
-        self.maxSpikes = maxSpikes
-        self.maxLatency = maxLatency
-        self.normalizeSpikes = normalizeSpikes
-        self.desensitize = False
-    
-    def spikeLatencies(self, X):
-        if (self.desensitize):
-            latency = X
-        else:
-            if (self.sigmoidRate):
-                rate = 1.0/(1.0 + np.exp(-(X-0.5)*10.0))
-                latency = self.latencyScale / rate
-            else:
-                latency = self.latencyScale / X
-        # find all values greater than maxL and set to maxL
-        maxed = latency > self.maxLatency
-        latency[maxed] = self.maxLatency
-        return latency
-        
-    def countNspikes(self, X):
-        #round latency to nearest int and set 0 <- 1        
-        latency = np.round(self.spikeLatencies(X), 0)
-        minL = latency <= 0.0
-        latency[minL] = 1.0
-        
-        #intergrationWindow = np.ones(latency.shape[0])
-        totalSpikes = np.zeros(latency.shape[0])
-        spikeTrain = np.zeros(latency.shape)
-
-        for i in range(latency.shape[0]):
-            for j in range(self.maxLatency):
-                spikeEmitted = ((j + 1) % latency[i] == 0)
-                notMax = latency[i] < self.maxLatency
-                
-                spikeIdx = np.bitwise_and(spikeEmitted, notMax)
-                
-                spikeTrain[i][spikeIdx] += 1
-                totalSpikes[i] += np.sum(spikeIdx)
-                if (totalSpikes[i] >= self.maxSpikes): break
-
-        if (self.normalizeSpikes):
-            spikeScale = np.ones(totalSpikes.shape)
-            spikesEmitted = totalSpikes > 0.0
-            spikeScale[spikesEmitted] = self.maxSpikes / totalSpikes[spikesEmitted]
-            spikeTrain = np.transpose(spikeScale * np.transpose(spikeTrain))
-            
-        return spikeTrain
-                
-def enum(**enums):
-    return type('Enum', (), enums)
-
-ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_BgTest = 2, RS_NoBgTrain_NoBg_test = 3, RS_BgTrain_BgTest = 4, RS_NoBgTrain_BgTest = 5)
-
-target_names = ['red', 'green', 'blue', 'yellow']
-exp = ExperimentTypes.NoBgTrain_NoBg_test
+dataFolder = "data/Otrain_4Otest/" #folders: Otrain_4Otest, OBGtrain_4OBGtest, Otrain_4OBGtest
+target_names = ['odorant 0', 'odorant 1', 'odorant 2', 'odorant 3']
 standardize = True
 parameterEstimation = 'none' #options: none, exhaustive, random, fixed_range
-rand_iter = 100 #number of samples in the parameter space to sample in random estimation mode
+rand_iter = 10 #number of samples in the parameter space to sample in random estimation mode
 doRsa = False
 
 ###############################################################################
-# Pick a dataset
-# As the project grows, this should be replaced by a line arg.
-# to set a containing folder then run on the data in that dir
-if (exp == ExperimentTypes.NoBgTrain_NoBg_test):
-    train_conc_file = "data/Otrain_4Otest/train_c.csv"
-    train_actv_file = "data/Otrain_4Otest/train_a.csv"
-    test_conc_file = "data/Otrain_4Otest/test_c.csv"
-    test_actv_file = "data/Otrain_4Otest/test_a.csv"
-elif (exp == ExperimentTypes.BgTrain_BgTest):
-    train_conc_file = "data/OBGtrain_4OBGtest/train_c.csv"
-    train_actv_file = "data/OBGtrain_4OBGtest/train_a.csv"
-    test_conc_file = "data/OBGtrain_4OBGtest/test_c.csv"
-    test_actv_file = "data/OBGtrain_4OBGtest/test_a.csv"
-elif (exp == ExperimentTypes.NoBgTrain_BgTest):
-    train_conc_file = "data/Otrain_4OBGtest/train_c.csv"
-    train_actv_file = "data/Otrain_4OBGtest/train_a.csv"
-    test_conc_file = "data/Otrain_4OBGtest/test_c.csv"
-    test_actv_file = "data/Otrain_4OBGtest/test_a.csv"
-elif (exp == ExperimentTypes.RS_NoBgTrain_NoBg_test):
-    train_conc_file = "data/Otrain_4Otest/train_c.csv"
-    train_actv_file = "data/Otrain_4Otest/train_a_rs.csv"
-    test_conc_file = "data/Otrain_4Otest/test_c.csv"
-    test_actv_file = "data/Otrain_4Otest/test_a_rs.csv"
-elif (exp == ExperimentTypes.RS_BgTrain_BgTest):
-    train_conc_file = "data/OBGtrain_4OBGtest/train_c.csv"
-    train_actv_file = "data/OBGtrain_4OBGtest/train_a_rs.csv"
-    test_conc_file = "data/OBGtrain_4OBGtest/test_c.csv"
-    test_actv_file = "data/OBGtrain_4OBGtest/test_a_rs.csv"
-elif (exp == ExperimentTypes.RS_NoBgTrain_BgTest):
-    train_conc_file = "data/Otrain_4OBGtest/train_c.csv"
-    train_actv_file = "data/Otrain_4OBGtest/train_a_rs.csv"
-    test_conc_file = "data/Otrain_4OBGtest/test_c.csv"
-    test_actv_file = "data/Otrain_4OBGtest/test_a_rs.csv"
+# build the dataset
+train_conc_file = dataFolder + "train_c.csv"
+train_actv_file = dataFolder + "train_a.csv"
+test_conc_file = dataFolder + "test_c.csv"
+test_actv_file = dataFolder + "test_a.csv"
 
 ###############################################################################
 #load data
@@ -148,7 +65,7 @@ test_target = np.argmax(test_c, axis=1)
 ###############################################################################
 # Data Pre-processing
 if (doRsa):
-    rsa = RSA(latencyScale=100, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
+    rsa = em.RSA(latencyScale=100, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
     train_a = rsa.countNspikes(train_a)
     test_a = rsa.countNspikes(test_a)
 
@@ -194,13 +111,15 @@ else:
                         {'kernel': ['linear'],
                         'C': [1, 10, 100, 1000]}]
         grid = GridSearchCV(svm.SVC(), param_grid=param_grid, cv=cv)
-    
-    else:
-        print("Invalid paramEstimation Setting")
-        exit(1)   
 
     #fit and validate until we find the best estimator within the range
     grid.fit(train_a, train_target)
+    
+    #show the resulting estimators
+    for params, mean_score, scores in grid.grid_scores_:
+        print("%0.3f (+/-%0.03f) for %r" % (mean_score, scores.std() / 2, params))
+
+    print("Best Estimator: %s" % grid.best_estimator_)
     clf = grid.best_estimator_
     
 ###############################################################################
@@ -259,5 +178,5 @@ plt.show()
 print("\n")
 print(classification_report(test_target, pred, target_names=target_names))
 print("Accuracy Score: %s\n" % accuracy_score(test_target, pred))
-print("Classifier Settings: %s" % grid.best_estimator_)
+print("Classifier Settings: %s" % clf)
 #print("AP", average_precision_score(test_target, pred))
