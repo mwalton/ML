@@ -27,33 +27,28 @@ from sklearn.metrics import accuracy_score
 
 dataFolder = "data/Otrain_4Otest/" #folders: Otrain_4Otest, OBGtrain_4OBGtest, Otrain_4OBGtest
 target_names = ['odorant 0', 'odorant 1', 'odorant 2', 'odorant 3']
+
+addNoise = True
+doRsa = False
 standardize = True
 parameterEstimation = 'none' #options: none, exhaustive, random, fixed_range
 rand_iter = 10 #number of samples in the parameter space to sample in random estimation mode
-doRsa = False
-
-###############################################################################
-# build the dataset
-train_conc_file = dataFolder + "train_c.csv"
-train_actv_file = dataFolder + "train_a.csv"
-test_conc_file = dataFolder + "test_c.csv"
-test_actv_file = dataFolder + "test_a.csv"
 
 ###############################################################################
 #load data
-reader = csv.reader(open(train_conc_file,"rb"), delimiter=",")
+reader = csv.reader(open(dataFolder + "train_c.csv","rb"), delimiter=",")
 x = list(reader)
 train_c = np.array(x).astype('float')
 
-reader = csv.reader(open(train_actv_file,"rb"), delimiter=",")
+reader = csv.reader(open(dataFolder + "train_a.csv","rb"), delimiter=",")
 x = list(reader)
 train_a = np.array(x).astype('float')
 
-reader = csv.reader(open(test_conc_file,"rb"), delimiter=",")
+reader = csv.reader(open(dataFolder + "test_c.csv","rb"), delimiter=",")
 x = list(reader)
 test_c = np.array(x).astype('float')
 
-reader = csv.reader(open(test_actv_file,"rb"), delimiter=",")
+reader = csv.reader(open(dataFolder + "test_a.csv","rb"), delimiter=",")
 x = list(reader)
 test_a = np.array(x).astype('float')
 
@@ -63,9 +58,22 @@ train_target = np.argmax(train_c, axis=1)
 test_target = np.argmax(test_c, axis=1)
 
 ###############################################################################
+# Add noise to training and test sets
+if (addNoise):
+    random_state = np.random.RandomState(0)
+    
+    n_samples, n_features = train_a.shape
+    train_a = np.c_[train_a, random_state.randn(n_samples, n_features)]
+    
+    n_samples, n_features = test_a.shape
+    test_a = np.c_[test_a, random_state.randn(n_samples, n_features)]
+
+###############################################################################
 # Data Pre-processing
 if (doRsa):
-    rsa = em.RSA(latencyScale=100, sigmoidRate=False, normalizeSpikes=True, maxLatency=1000, maxSpikes=20)
+    rsa = em.RSA(latencyScale=100, sigmoidRate=False, normalizeSpikes=True,
+                 maxLatency=1000, maxSpikes=20)
+                 
     train_a = rsa.countNspikes(train_a)
     test_a = rsa.countNspikes(test_a)
 
@@ -100,9 +108,11 @@ else:
         class_weight_range = ['auto', None]
         gamma_range_range =  sp.stats.expon(scale=.1)
         C_range = sp.stats.expon(scale=100)
-        param_dist = dict(kernel=kernel_range, gamma=gamma_range, C=C_range, class_weight=class_weight_range)
+        param_dist = dict(kernel=kernel_range, gamma=gamma_range, C=C_range,
+                          class_weight=class_weight_range)
         
-        grid = RandomizedSearchCV(svm.SVC(), param_distributions=param_dist, cv=cv, n_iter=rand_iter)
+        grid = RandomizedSearchCV(svm.SVC(), param_distributions=param_dist,
+                                  cv=cv, n_iter=rand_iter)
         
     elif(parameterEstimation == 'fixed_range'):
         #exhaustive search on an explictly defined dictionary of params
