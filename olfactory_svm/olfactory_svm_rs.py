@@ -69,8 +69,8 @@ class RSA:
 
         if (self.normalizeSpikes):
             spikeScale = np.ones(totalSpikes.shape)
-            spikesEmitted = totalSpikes > 0.0            
-            spikeScale[spikesEmitted] = self.maxSpikes / totalSpikes[spikesEmitted]          
+            spikesEmitted = totalSpikes > 0.0
+            spikeScale[spikesEmitted] = self.maxSpikes / totalSpikes[spikesEmitted]
             spikeTrain = np.transpose(spikeScale * np.transpose(spikeTrain))
             
         return spikeTrain
@@ -83,9 +83,9 @@ ExperimentTypes = enum(NoBgTrain_NoBg_test = 0, BgTrain_BgTest = 1, NoBgTrain_Bg
 target_names = ['red', 'green', 'blue', 'yellow']
 exp = ExperimentTypes.NoBgTrain_NoBg_test
 standardize = True
-parameterEstimation = 'fixed_range' #options: none, exhaustive, random, fixed_range
+parameterEstimation = 'none' #options: none, exhaustive, random, fixed_range
 rand_iter = 100 #number of samples in the parameter space to sample in random estimation mode
-doRsa = True
+doRsa = False
 
 ###############################################################################
 # Pick a dataset
@@ -201,11 +201,10 @@ else:
 
     #fit and validate until we find the best estimator within the range
     grid.fit(train_a, train_target)
-    print("Best Classifier: %s" % grid.best_estimator_)
     clf = grid.best_estimator_
     
 ###############################################################################
-#RUN PREDICTION ON 
+#RUN PREDICTION
     
 pred = clf.predict(test_a)
 
@@ -257,6 +256,8 @@ plt.ylabel('Target label')
 plt.xlabel('Predicted label')
 plt.show()
 
+print("\n")
 print(classification_report(test_target, pred, target_names=target_names))
-print("Accuracy Score: %s" % accuracy_score(test_target, pred))
+print("Accuracy Score: %s\n" % accuracy_score(test_target, pred))
+print("Classifier Settings: %s" % grid.best_estimator_)
 #print("AP", average_precision_score(test_target, pred))
