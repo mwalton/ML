@@ -1,4 +1,4 @@
 proto-OSVC-sklearn
 ==================
 
-early SK-lean tests, see em-temporalcoding-rsa for recent version
+early SK-lean experiments, see artificial-olfcation for recent version
